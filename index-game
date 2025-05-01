@@ -1,0 +1,116 @@
+# Início do código para um jogo de luta básico usando Pygame
+
+import pygame
+import random
+
+# Inicializa o Pygame
+pygame.init()
+
+# Definir as cores
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+
+# Tamanho da tela
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Jogo de Luta Básico")
+
+# Configuração da fonte
+font = pygame.font.SysFont("Arial", 30)
+
+# Definir a classe do personagem
+class Fighter:
+    def __init__(self, x, y, color, controls):
+        self.x = x
+        self.y = y
+        self.width = 50
+        self.height = 50
+        self.color = color
+        self.speed = 5
+        self.health = 100
+        self.controls = controls  # Controles personalizados
+        self.attack = False
+
+    def move(self):
+        keys = pygame.key.get_pressed()
+        if keys[self.controls['left']]:
+            self.x -= self.speed
+        if keys[self.controls['right']]:
+            self.x += self.speed
+        if keys[self.controls['up']]:
+            self.y -= self.speed
+        if keys[self.controls['down']]:
+            self.y += self.speed
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
+
+    def take_damage(self, amount):
+        self.health -= amount
+        if self.health < 0:
+            self.health = 0
+
+    def attack_enemy(self, enemy):
+        if self.attack:
+            # Detectar colisão simples
+            if (self.x < enemy.x + enemy.width and self.x + self.width > enemy.x and
+                self.y < enemy.y + enemy.height and self.y + self.height > enemy.y):
+                enemy.take_damage(random.randint(10, 20))
+                self.attack = False  # Após atacar, voltar ao estado neutro
+
+# Definir controles
+player1_controls = {'left': pygame.K_a, 'right': pygame.K_d, 'up': pygame.K_w, 'down': pygame.K_s, 'attack': pygame.K_f}
+player2_controls = {'left': pygame.K_LEFT, 'right': pygame.K_RIGHT, 'up': pygame.K_UP, 'down': pygame.K_DOWN, 'attack': pygame.K_KP_ENTER}
+
+# Criar os personagens
+player1 = Fighter(100, SCREEN_HEIGHT // 2, BLUE, player1_controls)
+player2 = Fighter(SCREEN_WIDTH - 150, SCREEN_HEIGHT // 2, RED, player2_controls)
+
+# Loop principal do jogo
+running = True
+clock = pygame.time.Clock()
+
+while running:
+    screen.fill(WHITE)
+
+    # Eventos do teclado
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == player1.controls['attack']:
+                player1.attack = True
+            if event.key == player2.controls['attack']:
+                player2.attack = True
+
+    # Movimento dos jogadores
+    player1.move()
+    player2.move()
+
+    # Ataque dos jogadores
+    player1.attack_enemy(player2)
+    player2.attack_enemy(player1)
+
+    # Desenhar os jogadores
+    player1.draw(screen)
+    player2.draw(screen)
+
+    # Mostrar as barras de vida
+    pygame.draw.rect(screen, RED, (50, 50, player1.health * 2, 20))
+    pygame.draw.rect(screen, RED, (SCREEN_WIDTH - 250, 50, player2.health * 2, 20))
+
+    # Exibir o texto
+    health_text1 = font.render(f"Vida: {player1.health}", True, BLUE)
+    health_text2 = font.render(f"Vida: {player2.health}", True, RED)
+    screen.blit(health_text1, (50, 20))
+    screen.blit(health_text2, (SCREEN_WIDTH - 250, 20))
+
+    # Atualizar a tela
+    pygame.display.flip()
+
+    # Controle de FPS
+    clock.tick(60)
+
+pygame.quit()
